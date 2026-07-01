@@ -27,12 +27,23 @@ const toolNames = {
   water: 'Agua'
 };
 
+const categoryByTool = {
+  tree: 'tree',
+  house: 'house',
+  plant: 'plant',
+  rock: 'rock',
+  path: 'path',
+  water: 'water'
+};
+
 const projectState = {
   name: 'Sin título',
   activeTool: 'select',
   selectedObject: null,
   assets: [],
-  selectedCell: null
+  selectedCell: null,
+  placedObjects: [],
+  assetCycle: {}
 };
 
 const camera = {
@@ -152,6 +163,85 @@ function drawDiamond(x, y, width, height, fill, stroke) {
   ctx.stroke();
 }
 
+function getAssetsByCategory(category) {
+  return projectState.assets.filter((asset) => asset.category === category);
+}
+
+function getObjectAtCell(cell) {
+  return projectState.placedObjects.find((object) => object.col === cell.col && object.row === cell.row);
+}
+
+function getNextAssetForTool(tool) {
+  const category = categoryByTool[tool];
+  const availableAssets = getAssetsByCategory(category);
+
+  if (!availableAssets.length) return null;
+
+  const currentIndex = projectState.assetCycle[category] ?? 0;
+  const asset = availableAssets[currentIndex % availableAssets.length];
+  projectState.assetCycle[category] = currentIndex + 1;
+  return asset;
+}
+
+function placeObject(cell) {
+  const asset = getNextAssetForTool(projectState.activeTool);
+
+  if (!asset) {
+    setStatus('no hay assets disponibles para esta herramienta');
+    return;
+  }
+
+  const existingObject = getObjectAtCell(cell);
+
+  if (existingObject) {
+    existingObject.assetId = asset.id;
+    existingObject.name = asset.name;
+    existingObject.icon = asset.icon;
+    existingObject.category = asset.category;
+    selectObject(`${asset.name} en ${cell.col}, ${cell.row}`);
+    setStatus(`objeto actualizado: ${asset.name}`);
+  } else {
+    const newObject = {
+      id: crypto.randomUUID ? crypto.randomUUID() : `object_${Date.now()}`,
+      assetId: asset.id,
+      name: asset.name,
+      icon: asset.icon,
+      category: asset.category,
+      col: cell.col,
+      row: cell.row,
+      rotation: 0,
+      scale: 1
+    };
+
+    projectState.placedObjects.push(newObject);
+    selectObject(`${asset.name} en ${cell.col}, ${cell.row}`);
+    setStatus(`objeto colocado: ${asset.name}`);
+  }
+}
+
+function drawPlacedObjects() {
+  const sortedObjects = [...projectState.placedObjects].sort((a, b) => (a.col + a.row) - (b.col + b.row));
+
+  sortedObjects.forEach((object) => {
+    const point = gridToScreen(object.col, object.row);
+    const size = Math.max(22, 28 * camera.zoom);
+
+    ctx.save();
+    ctx.translate(point.x, point.y - 14 * camera.zoom);
+
+    ctx.beginPath();
+    ctx.ellipse(0, 14 * camera.zoom, 16 * camera.zoom, 6 * camera.zoom, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(48, 43, 37, 0.18)';
+    ctx.fill();
+
+    ctx.font = `${size}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(object.icon ?? '●', 0, 0);
+    ctx.restore();
+  });
+}
+
 function drawGrid() {
   ctx.clearRect(0, 0, isoCanvas.width, isoCanvas.height);
   ctx.save();
@@ -184,6 +274,7 @@ function drawGrid() {
     }
   }
 
+  drawPlacedObjects();
   ctx.restore();
 }
 
@@ -220,6 +311,8 @@ toolButtons.forEach((button) => {
 newProjectBtn.addEventListener('click', () => {
   projectState.name = 'Nuevo proyecto';
   projectState.selectedCell = null;
+  projectState.placedObjects = [];
+  projectState.assetCycle = {};
   selectObject(null);
   projectMessage.textContent = 'Proyecto: Nuevo proyecto';
   setStatus('nuevo proyecto creado');
@@ -232,6 +325,8 @@ saveProjectBtn.addEventListener('click', () => {
     activeTool: projectState.activeTool,
     selectedObject: projectState.selectedObject,
     selectedCell: projectState.selectedCell,
+    placedObjects: projectState.placedObjects,
+    assetCycle: projectState.assetCycle,
     camera,
     savedAt: new Date().toISOString()
   };
@@ -252,6 +347,8 @@ openProjectBtn.addEventListener('click', () => {
   const parsedProject = JSON.parse(savedProject);
   projectState.name = parsedProject.name ?? 'Proyecto abierto';
   projectState.selectedCell = parsedProject.selectedCell ?? null;
+  projectState.placedObjects = parsedProject.placedObjects ?? [];
+  projectState.assetCycle = parsedProject.assetCycle ?? {};
   camera.x = parsedProject.camera?.x ?? 0;
   camera.y = parsedProject.camera?.y ?? 0;
   camera.zoom = parsedProject.camera?.zoom ?? 1;
@@ -335,8 +432,14 @@ worldCanvas.addEventListener('pointerup', (event) => {
 
     if (cell) {
       projectState.selectedCell = cell;
-      selectObject(`Celda ${cell.col}, ${cell.row}`);
-      setStatus(`celda ${cell.col}, ${cell.row} seleccionada`);
+
+      if (projectState.activeTool === 'select') {
+        const existingObject = getObjectAtCell(cell);
+        selectObject(existingObject ? existingObject.name : `Celda ${cell.col}, ${cell.row}`);
+        setStatus(existingObject ? `objeto seleccionado: ${existingObject.name}` : `celda ${cell.col}, ${cell.row} seleccionada`);
+      } else {
+        placeObject(cell);
+      }
     } else {
       projectState.selectedCell = null;
       selectObject(null);
@@ -368,5 +471,5 @@ window.addEventListener('resize', resizeCanvas);
 
 setActiveTool('select');
 selectObject(null);
-loadAssetLibrary();
+loadAssetLibrary().then(() => drawGrid());
 resizeCanvas();
