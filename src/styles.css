@@ -76,7 +76,8 @@ button.primary,
 
 .brand p,
 .eyebrow,
-.statusbar {
+.statusbar,
+.canvas-note span {
   color: #756a5c;
   font-size: 0.85rem;
 }
@@ -115,97 +116,43 @@ button.primary,
   gap: 0.75rem;
 }
 
-.canvas-placeholder {
+.canvas-panel {
   position: relative;
+  min-height: 62vh;
   margin: 0 1.25rem 1.25rem;
   border-radius: 28px;
   overflow: hidden;
-  background: linear-gradient(#dce8e2 0 45%, #c6d1ad 45% 100%);
+  background: #dce8e2;
   box-shadow: 0 24px 80px rgba(70, 55, 38, 0.18);
 }
 
-.horizon {
+.world-canvas {
   position: absolute;
-  inset: 42% 0 auto;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.4);
+  inset: 0;
 }
 
-.terrain-card {
-  position: absolute;
-  left: 50%;
-  top: 54%;
-  width: min(70vw, 680px);
-  aspect-ratio: 1.45;
-  transform: translate(-50%, -50%) rotateX(56deg) rotateZ(-34deg);
-  border-radius: 42px;
-  background: #a8b589;
-  box-shadow: 0 30px 60px rgba(75, 63, 45, 0.22);
-}
-
-.lake,
-.forest,
-.path,
-.place {
-  position: absolute;
+.world-canvas canvas {
   display: block;
+  width: 100%;
+  height: 100%;
 }
 
-.lake {
-  width: 28%;
-  height: 25%;
-  left: 54%;
-  top: 22%;
-  border-radius: 58% 42% 52% 48%;
-  background: #8cbaba;
+.canvas-note {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  display: grid;
+  gap: 0.2rem;
+  max-width: min(320px, calc(100% - 2rem));
+  padding: 0.85rem 1rem;
+  border-radius: 18px;
+  background: rgba(255, 250, 241, 0.84);
+  box-shadow: 0 14px 40px rgba(70, 55, 38, 0.16);
+  backdrop-filter: blur(14px);
 }
 
-.forest {
-  width: 24%;
-  height: 22%;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 35%, #8aa06f, #61784f 65%);
-}
-
-.forest-a {
-  left: 18%;
-  top: 20%;
-}
-
-.forest-b {
-  left: 36%;
-  top: 58%;
-  transform: scale(0.8);
-}
-
-.path {
-  left: 25%;
-  top: 47%;
-  width: 46%;
-  height: 8%;
-  border-radius: 999px;
-  background: #b99b6d;
-  transform: rotate(-12deg);
-}
-
-.place {
-  padding: 0.4rem 0.65rem;
-  border-radius: 999px;
-  background: rgba(255, 250, 241, 0.9);
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #514638;
-  transform: rotateZ(34deg) rotateX(-56deg);
-}
-
-.place-a {
-  left: 22%;
-  top: 42%;
-}
-
-.place-b {
-  left: 59%;
-  top: 22%;
+.canvas-note strong {
+  color: #302b25;
 }
 
 .statusbar {
@@ -239,7 +186,7 @@ button.primary,
     flex-direction: column;
   }
 
-  .canvas-placeholder {
+  .canvas-panel {
     min-height: 56vh;
   }
 }
