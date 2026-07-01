@@ -130,15 +130,33 @@ function gridToScreen(col, row) {
   };
 }
 
+function pointIsInsideDiamond(point, center) {
+  const halfWidth = (grid.tileWidth * camera.zoom) / 2;
+  const halfHeight = (grid.tileHeight * camera.zoom) / 2;
+  const normalizedDistance = Math.abs(point.x - center.x) / halfWidth + Math.abs(point.y - center.y) / halfHeight;
+  return normalizedDistance <= 1;
+}
+
 function screenToGrid(screenX, screenY) {
-  const center = getCanvasCenter();
-  const mapOffsetY = 40;
-  const localX = (screenX - center.x) / camera.zoom;
-  const localY = (screenY - center.y + mapOffsetY * camera.zoom) / camera.zoom;
-  const col = Math.floor(localY / grid.tileHeight + localX / grid.tileWidth);
-  const row = Math.floor(localY / grid.tileHeight - localX / grid.tileWidth);
-  if (col < 0 || row < 0 || col >= grid.width || row >= grid.height) return null;
-  return { col, row };
+  const point = { x: screenX, y: screenY };
+  let bestCell = null;
+  let bestDistance = Infinity;
+
+  for (let row = 0; row < grid.height; row += 1) {
+    for (let col = 0; col < grid.width; col += 1) {
+      const center = gridToScreen(col, row);
+
+      if (!pointIsInsideDiamond(point, center)) continue;
+
+      const distance = Math.hypot(point.x - center.x, point.y - center.y);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestCell = { col, row };
+      }
+    }
+  }
+
+  return bestCell;
 }
 
 function drawDiamond(x, y, width, height, fill, stroke) {
