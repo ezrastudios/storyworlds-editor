@@ -52,6 +52,7 @@ const projectState = {
   selectedObject: null,
   assets: [],
   selectedCell: null,
+  previewCell: null,
   placedObjects: [],
   assetCycle: {}
 };
@@ -145,9 +146,7 @@ function screenToGrid(screenX, screenY) {
   for (let row = 0; row < grid.height; row += 1) {
     for (let col = 0; col < grid.width; col += 1) {
       const center = gridToScreen(col, row);
-
       if (!pointIsInsideDiamond(point, center)) continue;
-
       const distance = Math.hypot(point.x - center.x, point.y - center.y);
       if (distance < bestDistance) {
         bestDistance = distance;
@@ -159,7 +158,12 @@ function screenToGrid(screenX, screenY) {
   return bestCell;
 }
 
-function drawDiamond(x, y, width, height, fill, stroke) {
+function setPreviewFromPoint(point) {
+  projectState.previewCell = screenToGrid(point.x, point.y);
+  drawGrid();
+}
+
+function drawDiamond(x, y, width, height, fill, stroke, lineWidth = 1) {
   ctx.beginPath();
   ctx.moveTo(x, y - height / 2);
   ctx.lineTo(x + width / 2, y);
@@ -169,7 +173,7 @@ function drawDiamond(x, y, width, height, fill, stroke) {
   ctx.fillStyle = fill;
   ctx.fill();
   ctx.strokeStyle = stroke;
-  ctx.lineWidth = 1;
+  ctx.lineWidth = lineWidth;
   ctx.stroke();
 }
 
@@ -276,14 +280,17 @@ function drawGrid() {
     for (let col = 0; col < grid.width; col += 1) {
       const point = gridToScreen(col, row);
       const isSelected = projectState.selectedCell?.col === col && projectState.selectedCell?.row === row;
+      const isPreview = projectState.previewCell?.col === col && projectState.previewCell?.row === row;
       const tint = (col + row) % 2 === 0 ? '#a8b589' : '#aebc91';
+
       drawDiamond(
         point.x,
         point.y,
         grid.tileWidth * camera.zoom,
         grid.tileHeight * camera.zoom,
-        isSelected ? '#d9c594' : tint,
-        isSelected ? '#6d8060' : 'rgba(75, 63, 45, 0.16)'
+        isPreview ? '#c8d6aa' : isSelected ? '#d9c594' : tint,
+        isPreview ? '#302b25' : isSelected ? '#6d8060' : 'rgba(75, 63, 45, 0.16)',
+        isPreview ? Math.max(2, 2 * camera.zoom) : 1
       );
     }
   }
@@ -318,6 +325,7 @@ toolButtons.forEach((button) => {
 newProjectBtn.addEventListener('click', () => {
   projectState.name = 'Nuevo proyecto';
   projectState.selectedCell = null;
+  projectState.previewCell = null;
   projectState.placedObjects = [];
   projectState.assetCycle = {};
   selectObject(null);
@@ -351,6 +359,7 @@ openProjectBtn.addEventListener('click', () => {
   const parsedProject = JSON.parse(savedProject);
   projectState.name = parsedProject.name ?? 'Proyecto abierto';
   projectState.selectedCell = parsedProject.selectedCell ?? null;
+  projectState.previewCell = null;
   projectState.placedObjects = parsedProject.placedObjects ?? [];
   projectState.assetCycle = parsedProject.assetCycle ?? {};
   camera.x = parsedProject.camera?.x ?? 0;
@@ -376,26 +385,15 @@ createSceneBtn.addEventListener('click', () => {
   setStatus('escena creada como marcador inicial');
 });
 
-worldCanvas.addEventListener('pointerdown', (event) => {
-  worldCanvas.setPointerCapture(event.pointerId);
-  pointerState.pointers.set(event.pointerId, getPointerPosition(event));
-  pointerState.isDragging = true;
-  pointerState.didDrag = false;
-  pointerState.startX = event.clientX;
-  pointerState.startY = event.clientY;
-  pointerState.lastX = event.clientX;
-  pointerState.lastY = event.clientY;
-
-  if (pointerState.pointers.size === 2) {
-    const points = [...pointerState.pointers.values()];
-    pointerState.pinchDistance = getDistance(points[0], points[1]);
-    pointerState.pinchZoom = camera.zoom;
-  }
-});
-
 worldCanvas.addEventListener('pointermove', (event) => {
-  if (!pointerState.isDragging) return;
-  pointerState.pointers.set(event.pointerId, getPointerPosition(event));
+  const position = getPointerPosition(event);
+
+  if (!pointerState.isDragging) {
+    setPreviewFromPoint(position);
+    return;
+  }
+
+  pointerState.pointers.set(event.pointerId, position);
 
   if (pointerState.pointers.size === 2) {
     const points = [...pointerState.pointers.values()];
@@ -403,6 +401,7 @@ worldCanvas.addEventListener('pointermove', (event) => {
     if (pointerState.pinchDistance) {
       camera.zoom = clampZoom(pointerState.pinchZoom * (distance / pointerState.pinchDistance));
       pointerState.didDrag = true;
+      projectState.previewCell = null;
       drawGrid();
     }
     return;
@@ -416,11 +415,33 @@ worldCanvas.addEventListener('pointermove', (event) => {
   if (pointerState.didDrag) {
     camera.x += movementX;
     camera.y += movementY;
+    projectState.previewCell = null;
     drawGrid();
+  } else {
+    setPreviewFromPoint(position);
   }
 
   pointerState.lastX = event.clientX;
   pointerState.lastY = event.clientY;
+});
+
+worldCanvas.addEventListener('pointerdown', (event) => {
+  worldCanvas.setPointerCapture(event.pointerId);
+  const position = getPointerPosition(event);
+  pointerState.pointers.set(event.pointerId, position);
+  pointerState.isDragging = true;
+  pointerState.didDrag = false;
+  pointerState.startX = event.clientX;
+  pointerState.startY = event.clientY;
+  pointerState.lastX = event.clientX;
+  pointerState.lastY = event.clientY;
+  setPreviewFromPoint(position);
+
+  if (pointerState.pointers.size === 2) {
+    const points = [...pointerState.pointers.values()];
+    pointerState.pinchDistance = getDistance(points[0], points[1]);
+    pointerState.pinchZoom = camera.zoom;
+  }
 });
 
 worldCanvas.addEventListener('pointerup', (event) => {
@@ -432,7 +453,7 @@ worldCanvas.addEventListener('pointerup', (event) => {
 
   if (isTap) {
     const position = getPointerPosition(event);
-    const cell = screenToGrid(position.x, position.y);
+    const cell = projectState.previewCell ?? screenToGrid(position.x, position.y);
 
     if (cell) {
       projectState.selectedCell = cell;
@@ -454,16 +475,26 @@ worldCanvas.addEventListener('pointerup', (event) => {
   if (pointerState.pointers.size === 0) pointerState.isDragging = false;
 });
 
+worldCanvas.addEventListener('pointerleave', () => {
+  if (!pointerState.isDragging) {
+    projectState.previewCell = null;
+    drawGrid();
+  }
+});
+
 worldCanvas.addEventListener('pointercancel', (event) => {
   pointerState.pointers.delete(event.pointerId);
   pointerState.isDragging = false;
   pointerState.pinchDistance = null;
+  projectState.previewCell = null;
+  drawGrid();
 });
 
 worldCanvas.addEventListener('wheel', (event) => {
   event.preventDefault();
   const direction = event.deltaY > 0 ? -0.08 : 0.08;
   camera.zoom = clampZoom(camera.zoom + direction);
+  projectState.previewCell = null;
   drawGrid();
 }, { passive: false });
 
