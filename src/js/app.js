@@ -63,6 +63,7 @@ const projectState = {
 
 const camera = { x: 0, y: 0, zoom: 1 };
 const grid = { width: 18, height: 18, tileWidth: 72, tileHeight: 36 };
+const assetImages = new Map();
 
 const pointerState = {
   isDragging: false,
@@ -106,6 +107,7 @@ async function loadAssetLibrary() {
     const library = await response.json();
     projectState.assets = library.assets ?? [];
     assetCountLabel.textContent = `${projectState.assets.length} assets`;
+    await loadAssetImages();
     setStatus('biblioteca cargada');
   } catch (error) {
     projectState.assets = [];
@@ -113,6 +115,33 @@ async function loadAssetLibrary() {
     setStatus('biblioteca pendiente');
     console.warn(error);
   }
+}
+
+function loadAssetImages() {
+  const svgAssets = projectState.assets.filter((asset) => asset.kind === 'svg' && asset.src);
+  const imagePromises = svgAssets.map((asset) => new Promise((resolve) => {
+    if (assetImages.has(asset.id)) {
+      resolve();
+      return;
+    }
+
+    const image = new Image();
+    image.onload = () => {
+      assetImages.set(asset.id, image);
+      resolve();
+    };
+    image.onerror = () => {
+      console.warn(`No se pudo cargar el asset ${asset.id}`);
+      resolve();
+    };
+    image.src = asset.src;
+  }));
+
+  return Promise.all(imagePromises);
+}
+
+function getAssetById(assetId) {
+  return projectState.assets.find((asset) => asset.id === assetId) ?? null;
 }
 
 function clampZoom(value) {
@@ -199,6 +228,18 @@ function getNextAssetForTool(tool) {
   return asset;
 }
 
+function copyAssetVisualProperties(targetObject, asset) {
+  targetObject.assetId = asset.id;
+  targetObject.name = asset.name;
+  targetObject.icon = asset.icon;
+  targetObject.category = asset.category;
+  targetObject.kind = asset.kind;
+  targetObject.src = asset.src;
+  targetObject.drawWidth = asset.drawWidth;
+  targetObject.drawHeight = asset.drawHeight;
+  targetObject.anchorY = asset.anchorY;
+}
+
 function placeObject(cell) {
   const asset = getNextAssetForTool(projectState.activeTool);
   if (!asset) {
@@ -208,24 +249,19 @@ function placeObject(cell) {
 
   const existingObject = getObjectAtCell(cell);
   if (existingObject) {
-    existingObject.assetId = asset.id;
-    existingObject.name = asset.name;
-    existingObject.icon = asset.icon;
-    existingObject.category = asset.category;
+    copyAssetVisualProperties(existingObject, asset);
     selectObject(`${asset.name} en ${cell.col}, ${cell.row}`);
     setStatus(`objeto actualizado: ${asset.name}`);
   } else {
-    projectState.placedObjects.push({
+    const newObject = {
       id: crypto.randomUUID ? crypto.randomUUID() : `object_${Date.now()}`,
-      assetId: asset.id,
-      name: asset.name,
-      icon: asset.icon,
-      category: asset.category,
       col: cell.col,
       row: cell.row,
       rotation: 0,
       scale: 1
-    });
+    };
+    copyAssetVisualProperties(newObject, asset);
+    projectState.placedObjects.push(newObject);
     selectObject(`${asset.name} en ${cell.col}, ${cell.row}`);
     setStatus(`objeto colocado: ${asset.name}`);
   }
@@ -267,13 +303,36 @@ function drawMarkerShape(object) {
   ctx.fillText(object.icon ?? '●', 0, -4 * camera.zoom);
 }
 
+function drawSvgAsset(object) {
+  const asset = getAssetById(object.assetId);
+  const image = assetImages.get(object.assetId);
+
+  if (!asset || !image) {
+    drawMarkerShape(object);
+    return;
+  }
+
+  const width = (asset.drawWidth ?? object.drawWidth ?? 72) * camera.zoom * (object.scale ?? 1);
+  const height = (asset.drawHeight ?? object.drawHeight ?? 72) * camera.zoom * (object.scale ?? 1);
+  const anchorY = (asset.anchorY ?? object.anchorY ?? height / 2) * camera.zoom * (object.scale ?? 1);
+
+  ctx.drawImage(image, -width / 2, -anchorY, width, height);
+}
+
 function drawPlacedObjects() {
   const sortedObjects = [...projectState.placedObjects].sort((a, b) => (a.col + a.row) - (b.col + b.row));
   sortedObjects.forEach((object) => {
     const point = gridToScreen(object.col, object.row);
     ctx.save();
-    ctx.translate(point.x, point.y - 17 * camera.zoom);
-    drawMarkerShape(object);
+    ctx.translate(point.x, point.y);
+
+    if (object.kind === 'svg' || getAssetById(object.assetId)?.kind === 'svg') {
+      drawSvgAsset(object);
+    } else {
+      ctx.translate(0, -17 * camera.zoom);
+      drawMarkerShape(object);
+    }
+
     ctx.restore();
   });
 }
