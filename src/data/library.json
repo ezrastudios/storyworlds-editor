@@ -1,15 +1,19 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "Story Worlds Starter Library",
-  "description": "Biblioteca inicial de assets conceptuales para validar el editor.",
+  "description": "Biblioteca inicial de assets conceptuales y primeros SVG estilo Flow.",
   "assets": [
     {
       "id": "tree_round_01",
       "category": "tree",
       "name": "Árbol redondo 01",
       "icon": "🌳",
-      "kind": "placeholder",
-      "tags": ["forest", "plain", "soft"]
+      "kind": "svg",
+      "src": "src/assets/trees/tree_round_01.svg",
+      "drawWidth": 76,
+      "drawHeight": 88,
+      "anchorY": 54,
+      "tags": ["forest", "plain", "soft", "flow"]
     },
     {
       "id": "tree_round_02",
@@ -64,8 +68,12 @@
       "category": "rock",
       "name": "Roca pequeña 01",
       "icon": "🪨",
-      "kind": "placeholder",
-      "tags": ["rock", "detail", "small"]
+      "kind": "svg",
+      "src": "src/assets/rocks/rock_small_01.svg",
+      "drawWidth": 62,
+      "drawHeight": 46,
+      "anchorY": 28,
+      "tags": ["rock", "detail", "small", "flow"]
     },
     {
       "id": "rock_large_01",
@@ -80,8 +88,12 @@
       "category": "house",
       "name": "Casa sencilla 01",
       "icon": "🏠",
-      "kind": "placeholder",
-      "tags": ["house", "cottage", "small"]
+      "kind": "svg",
+      "src": "src/assets/houses/house_cottage_01.svg",
+      "drawWidth": 88,
+      "drawHeight": 76,
+      "anchorY": 48,
+      "tags": ["house", "cottage", "small", "flow"]
     },
     {
       "id": "house_tower_01",
