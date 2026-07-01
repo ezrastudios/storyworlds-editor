@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90" role="img" aria-label="Roca pequeña Flow">
+  <defs>
+    <linearGradient id="rock" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b8b0a1"/>
+      <stop offset="1" stop-color="#7f786f"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="60" cy="76" rx="38" ry="8" fill="#302b25" opacity="0.15"/>
+  <path d="M24 63 C27 43 42 24 61 25 C74 18 93 31 98 53 C94 70 72 76 49 72 C37 73 28 70 24 63 Z" fill="url(#rock)"/>
+  <path d="M43 35 C52 31 67 31 78 38" fill="none" stroke="#dfd6c7" stroke-width="5" stroke-linecap="round" opacity="0.35"/>
+  <path d="M35 61 C50 68 75 67 91 55" fill="none" stroke="#625d56" stroke-width="4" stroke-linecap="round" opacity="0.25"/>
+</svg>
