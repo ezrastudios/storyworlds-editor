@@ -32,8 +32,8 @@
     <section class="workspace">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Nuevo proyecto</p>
-          <h2>World Bible Prototype</h2>
+          <p class="eyebrow">Milestone 1</p>
+          <h2>Core Canvas</h2>
         </div>
         <div class="actions">
           <button>Guardar</button>
@@ -41,24 +41,22 @@
         </div>
       </header>
 
-      <section class="canvas-placeholder" aria-label="Vista principal del editor">
-        <div class="horizon"></div>
-        <div class="terrain-card">
-          <span class="lake"></span>
-          <span class="forest forest-a"></span>
-          <span class="forest forest-b"></span>
-          <span class="path"></span>
-          <span class="place place-a">Casa</span>
-          <span class="place place-b">Lago</span>
+      <section class="canvas-panel" aria-label="Vista 3D del editor">
+        <div id="worldCanvas" class="world-canvas"></div>
+        <div class="canvas-note">
+          <strong>Core Canvas</strong>
+          <span>Escena, cámara, luz, terreno y marcador inicial.</span>
         </div>
       </section>
 
       <footer class="statusbar">
-        <span>Estado: diseño inicial</span>
+        <span>Estado: escena 3D inicial</span>
         <span>Herramienta: Proyecto</span>
         <span>Autosave: pendiente</span>
       </footer>
     </section>
   </main>
+
+  <script type="module" src="src/main.js"></script>
 </body>
 </html>
