@@ -24,7 +24,8 @@ const toolNames = {
   plant: 'Vegetación',
   rock: 'Roca',
   path: 'Camino',
-  water: 'Agua'
+  water: 'Agua',
+  erase: 'Borrar'
 };
 
 const categoryByTool = {
@@ -227,6 +228,20 @@ function placeObject(cell) {
   }
 }
 
+function eraseObject(cell) {
+  const objectIndex = projectState.placedObjects.findIndex((object) => object.col === cell.col && object.row === cell.row);
+
+  if (objectIndex === -1) {
+    selectObject(`Celda ${cell.col}, ${cell.row}`);
+    setStatus('no hay objeto para borrar');
+    return;
+  }
+
+  const [removedObject] = projectState.placedObjects.splice(objectIndex, 1);
+  selectObject(null);
+  setStatus(`objeto borrado: ${removedObject.name}`);
+}
+
 function drawMarkerShape(object) {
   const color = markerColors[object.category] ?? '#6d8060';
   const radius = Math.max(12, 15 * camera.zoom);
@@ -282,14 +297,16 @@ function drawGrid() {
       const isSelected = projectState.selectedCell?.col === col && projectState.selectedCell?.row === row;
       const isPreview = projectState.previewCell?.col === col && projectState.previewCell?.row === row;
       const tint = (col + row) % 2 === 0 ? '#a8b589' : '#aebc91';
+      const previewStroke = projectState.activeTool === 'erase' ? '#a55645' : '#302b25';
+      const previewFill = projectState.activeTool === 'erase' ? '#e5c1b8' : '#c8d6aa';
 
       drawDiamond(
         point.x,
         point.y,
         grid.tileWidth * camera.zoom,
         grid.tileHeight * camera.zoom,
-        isPreview ? '#c8d6aa' : isSelected ? '#d9c594' : tint,
-        isPreview ? '#302b25' : isSelected ? '#6d8060' : 'rgba(75, 63, 45, 0.16)',
+        isPreview ? previewFill : isSelected ? '#d9c594' : tint,
+        isPreview ? previewStroke : isSelected ? '#6d8060' : 'rgba(75, 63, 45, 0.16)',
         isPreview ? Math.max(2, 2 * camera.zoom) : 1
       );
     }
@@ -461,6 +478,8 @@ worldCanvas.addEventListener('pointerup', (event) => {
         const existingObject = getObjectAtCell(cell);
         selectObject(existingObject ? existingObject.name : `Celda ${cell.col}, ${cell.row}`);
         setStatus(existingObject ? `objeto seleccionado: ${existingObject.name}` : `celda ${cell.col}, ${cell.row} seleccionada`);
+      } else if (projectState.activeTool === 'erase') {
+        eraseObject(cell);
       } else {
         placeObject(cell);
       }
