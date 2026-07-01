@@ -14,11 +14,21 @@ const openProjectBtn = document.querySelector('#openProjectBtn');
 const exportProjectBtn = document.querySelector('#exportProjectBtn');
 const importProjectBtn = document.querySelector('#importProjectBtn');
 const importProjectInput = document.querySelector('#importProjectInput');
+const importAssetBtn = document.querySelector('#importAssetBtn');
+const importAssetInput = document.querySelector('#importAssetInput');
+const assetNameInput = document.querySelector('#assetNameInput');
+const assetCategoryInput = document.querySelector('#assetCategoryInput');
+const assetPreview = document.querySelector('#assetPreview');
+const assetLibraryList = document.querySelector('#assetLibraryList');
 const resetViewBtn = document.querySelector('#resetViewBtn');
 const createSceneBtn = document.querySelector('#createSceneBtn');
 const worldCanvas = document.querySelector('#worldCanvas');
 const isoCanvas = document.querySelector('#isoCanvas');
 const ctx = isoCanvas.getContext('2d');
+
+const DB_NAME = 'storyworlds-editor';
+const DB_VERSION = 1;
+const ASSET_STORE = 'assets';
 
 const toolNames = {
   select: 'Seleccionar',
@@ -54,7 +64,10 @@ const projectState = {
   name: 'Sin título',
   activeTool: 'select',
   selectedObject: null,
+  selectedAssetId: null,
   assets: [],
+  baseAssets: [],
+  localAssets: [],
   selectedCell: null,
   previewCell: null,
   placedObjects: [],
@@ -100,48 +113,196 @@ function selectObject(objectName) {
   selectedObjectLabel.textContent = objectName ?? 'Ninguno';
 }
 
-async function loadAssetLibrary() {
-  try {
-    const response = await fetch('src/data/library.json');
-    if (!response.ok) throw new Error('No se pudo leer library.json');
-    const library = await response.json();
-    projectState.assets = library.assets ?? [];
-    assetCountLabel.textContent = `${projectState.assets.length} assets`;
-    await loadAssetImages();
-    setStatus('biblioteca cargada');
-  } catch (error) {
-    projectState.assets = [];
-    assetCountLabel.textContent = 'No disponible';
-    setStatus('biblioteca pendiente');
-    console.warn(error);
-  }
+function normalizeAssetId(value) {
+  return (value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_\-]+/g, '_')
+    .replace(/^_+|_+$/g, '');
 }
 
-function loadAssetImages() {
-  const svgAssets = projectState.assets.filter((asset) => asset.kind === 'svg' && asset.src);
-  const imagePromises = svgAssets.map((asset) => new Promise((resolve) => {
-    if (assetImages.has(asset.id)) {
-      resolve();
-      return;
-    }
+function getReadableName(assetId) {
+  return assetId
+    .replace(/[_\-]+/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
 
+function openAssetDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(ASSET_STORE)) {
+        db.createObjectStore(ASSET_STORE, { keyPath: 'id' });
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveLocalAsset(asset) {
+  const db = await openAssetDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(ASSET_STORE, 'readwrite');
+    transaction.objectStore(ASSET_STORE).put(asset);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+
+async function getLocalAssets() {
+  const db = await openAssetDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(ASSET_STORE, 'readonly');
+    const request = transaction.objectStore(ASSET_STORE).getAll();
+    request.onsuccess = () => resolve(request.result ?? []);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function cacheImage(asset) {
+  const src = asset.src || asset.file;
+  if (!src || assetImages.has(asset.id)) return Promise.resolve();
+
+  return new Promise((resolve) => {
     const image = new Image();
     image.onload = () => {
       assetImages.set(asset.id, image);
+      drawGrid();
       resolve();
     };
     image.onerror = () => {
       console.warn(`No se pudo cargar el asset ${asset.id}`);
       resolve();
     };
-    image.src = asset.src;
-  }));
-
-  return Promise.all(imagePromises);
+    image.src = src;
+  });
 }
 
 function getAssetById(assetId) {
   return projectState.assets.find((asset) => asset.id === assetId) ?? null;
+}
+
+function getAssetsByCategory(category) {
+  return projectState.assets.filter((asset) => asset.category === category);
+}
+
+function isImageAsset(asset) {
+  return Boolean(asset?.src || asset?.file || asset?.kind === 'local-image' || asset?.kind === 'svg' || asset?.type === 'image');
+}
+
+async function loadAssetLibrary() {
+  try {
+    const response = await fetch('src/data/library.json');
+    if (!response.ok) throw new Error('No se pudo leer library.json');
+    const library = await response.json();
+    projectState.baseAssets = library.assets ?? [];
+  } catch (error) {
+    projectState.baseAssets = [];
+    console.warn(error);
+  }
+
+  try {
+    projectState.localAssets = await getLocalAssets();
+  } catch (error) {
+    projectState.localAssets = [];
+    console.warn(error);
+  }
+
+  projectState.assets = [...projectState.baseAssets, ...projectState.localAssets];
+  assetCountLabel.textContent = `${projectState.assets.length} assets`;
+  await Promise.all(projectState.assets.filter(isImageAsset).map(cacheImage));
+  renderLocalAssetLibrary();
+  setStatus('biblioteca cargada');
+}
+
+function renderLocalAssetLibrary() {
+  assetLibraryList.innerHTML = '';
+
+  if (!projectState.localAssets.length) {
+    assetLibraryList.innerHTML = '<p class="empty-state">Aún no hay assets importados.</p>';
+    return;
+  }
+
+  projectState.localAssets.forEach((asset) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'asset-card';
+    button.classList.toggle('active', projectState.selectedAssetId === asset.id);
+    button.dataset.assetId = asset.id;
+
+    const image = document.createElement('img');
+    image.src = asset.src;
+    image.alt = asset.name;
+
+    const label = document.createElement('span');
+    label.textContent = asset.id;
+
+    button.append(image, label);
+    button.addEventListener('click', () => selectLibraryAsset(asset.id));
+    assetLibraryList.append(button);
+  });
+}
+
+function selectLibraryAsset(assetId) {
+  const asset = getAssetById(assetId);
+  if (!asset) return;
+
+  projectState.selectedAssetId = asset.id;
+  assetPreview.innerHTML = `<img src="${asset.src}" alt="${asset.name}" />`;
+
+  if (toolNames[asset.category]) {
+    setActiveTool(asset.category);
+  } else if (asset.category !== 'bridge') {
+    setActiveTool('select');
+  }
+
+  selectObject(`Asset: ${asset.name}`);
+  renderLocalAssetLibrary();
+  setStatus(`asset seleccionado: ${asset.name}`);
+}
+
+async function importLocalAsset(file) {
+  if (!file) return;
+
+  const id = normalizeAssetId(assetNameInput.value || file.name.replace(/\.[^.]+$/, ''));
+  if (!id) {
+    setStatus('escribe un nombre válido para el asset');
+    return;
+  }
+
+  const category = assetCategoryInput.value;
+  const src = await readFileAsDataURL(file);
+  const asset = {
+    id,
+    name: getReadableName(id),
+    category,
+    type: 'image',
+    kind: 'local-image',
+    src,
+    drawWidth: category === 'house' ? 118 : 82,
+    drawHeight: category === 'house' ? 96 : 82,
+    anchorY: category === 'house' ? 88 : 70,
+    importedAt: new Date().toISOString()
+  };
+
+  await saveLocalAsset(asset);
+  await cacheImage(asset);
+  await loadAssetLibrary();
+  selectLibraryAsset(asset.id);
+  setStatus(`asset importado: ${asset.id}`);
 }
 
 function clampZoom(value) {
@@ -210,15 +371,18 @@ function drawDiamond(x, y, width, height, fill, stroke, lineWidth = 1) {
   ctx.stroke();
 }
 
-function getAssetsByCategory(category) {
-  return projectState.assets.filter((asset) => asset.category === category);
-}
-
 function getObjectAtCell(cell) {
   return projectState.placedObjects.find((object) => object.col === cell.col && object.row === cell.row);
 }
 
 function getNextAssetForTool(tool) {
+  if (projectState.selectedAssetId) {
+    const selectedAsset = getAssetById(projectState.selectedAssetId);
+    if (selectedAsset && (selectedAsset.category === tool || selectedAsset.category === 'bridge')) {
+      return selectedAsset;
+    }
+  }
+
   const category = categoryByTool[tool];
   const availableAssets = getAssetsByCategory(category);
   if (!availableAssets.length) return null;
@@ -234,7 +398,9 @@ function copyAssetVisualProperties(targetObject, asset) {
   targetObject.icon = asset.icon;
   targetObject.category = asset.category;
   targetObject.kind = asset.kind;
+  targetObject.type = asset.type;
   targetObject.src = asset.src;
+  targetObject.file = asset.file;
   targetObject.drawWidth = asset.drawWidth;
   targetObject.drawHeight = asset.drawHeight;
   targetObject.anchorY = asset.anchorY;
@@ -303,19 +469,25 @@ function drawMarkerShape(object) {
   ctx.fillText(object.icon ?? '●', 0, -4 * camera.zoom);
 }
 
-function drawSvgAsset(object) {
-  const asset = getAssetById(object.assetId);
+function drawImageAsset(object) {
   const image = assetImages.get(object.assetId);
+  if (!image && object.src) {
+    cacheImage(object);
+  }
 
-  if (!asset || !image) {
+  if (!image) {
     drawMarkerShape(object);
     return;
   }
 
-  const width = (asset.drawWidth ?? object.drawWidth ?? 72) * camera.zoom * (object.scale ?? 1);
-  const height = (asset.drawHeight ?? object.drawHeight ?? 72) * camera.zoom * (object.scale ?? 1);
-  const anchorY = (asset.anchorY ?? object.anchorY ?? height / 2) * camera.zoom * (object.scale ?? 1);
+  const width = (object.drawWidth ?? 82) * camera.zoom * (object.scale ?? 1);
+  const height = (object.drawHeight ?? 82) * camera.zoom * (object.scale ?? 1);
+  const anchorY = (object.anchorY ?? height / camera.zoom / 2) * camera.zoom * (object.scale ?? 1);
 
+  ctx.beginPath();
+  ctx.ellipse(0, 9 * camera.zoom, width * 0.32, height * 0.08, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(48, 43, 37, 0.16)';
+  ctx.fill();
   ctx.drawImage(image, -width / 2, -anchorY, width, height);
 }
 
@@ -326,8 +498,8 @@ function drawPlacedObjects() {
     ctx.save();
     ctx.translate(point.x, point.y);
 
-    if (object.kind === 'svg' || getAssetById(object.assetId)?.kind === 'svg') {
-      drawSvgAsset(object);
+    if (object.src || object.file || isImageAsset(getAssetById(object.assetId))) {
+      drawImageAsset(object);
     } else {
       ctx.translate(0, -17 * camera.zoom);
       drawMarkerShape(object);
@@ -400,14 +572,12 @@ function createProjectDocument() {
   return {
     format: 'SWE',
     version: 1,
-    project: {
-      name: projectState.name,
-      updatedAt: timestamp
-    },
+    project: { name: projectState.name, updatedAt: timestamp },
     editor: {
       activeTool: projectState.activeTool,
       selectedCell: projectState.selectedCell,
-      selectedObject: projectState.selectedObject
+      selectedObject: projectState.selectedObject,
+      selectedAssetId: projectState.selectedAssetId
     },
     grid: {
       type: 'isometric',
@@ -430,6 +600,7 @@ function applyProjectDocument(documentData) {
   projectState.name = documentData.project?.name ?? 'Proyecto importado';
   projectState.selectedCell = documentData.editor?.selectedCell ?? null;
   projectState.previewCell = null;
+  projectState.selectedAssetId = documentData.editor?.selectedAssetId ?? null;
   projectState.placedObjects = documentData.objects ?? [];
   projectState.assetCycle = documentData.assetCycle ?? {};
 
@@ -437,9 +608,14 @@ function applyProjectDocument(documentData) {
   camera.y = documentData.camera?.y ?? 0;
   camera.zoom = documentData.camera?.zoom ?? 1;
 
+  projectState.placedObjects.forEach((object) => {
+    if (object.src) cacheImage(object);
+  });
+
   selectObject(documentData.editor?.selectedObject ?? null);
   setActiveTool(documentData.editor?.activeTool ?? 'select');
   projectMessage.textContent = `Proyecto: ${projectState.name}`;
+  renderLocalAssetLibrary();
   drawGrid();
 }
 
@@ -457,7 +633,6 @@ function exportProjectFile() {
   const blob = new Blob([fileContent], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
-
   link.href = url;
   link.download = `${getSafeFileName(projectState.name)}.swe`;
   document.body.appendChild(link);
@@ -469,7 +644,6 @@ function exportProjectFile() {
 
 function importProjectFile(file) {
   if (!file) return;
-
   const reader = new FileReader();
   reader.onload = () => {
     try {
@@ -512,7 +686,6 @@ openProjectBtn.addEventListener('click', () => {
     setStatus('no hay proyecto guardado todavía');
     return;
   }
-
   try {
     applyProjectDocument(JSON.parse(savedProject));
     setStatus('proyecto abierto desde este navegador');
@@ -523,14 +696,22 @@ openProjectBtn.addEventListener('click', () => {
 });
 
 exportProjectBtn.addEventListener('click', exportProjectFile);
-
-importProjectBtn.addEventListener('click', () => {
-  importProjectInput.click();
-});
-
+importProjectBtn.addEventListener('click', () => importProjectInput.click());
 importProjectInput.addEventListener('change', () => {
   importProjectFile(importProjectInput.files?.[0]);
   importProjectInput.value = '';
+});
+
+importAssetBtn.addEventListener('click', () => importAssetInput.click());
+importAssetInput.addEventListener('change', async () => {
+  try {
+    await importLocalAsset(importAssetInput.files?.[0]);
+  } catch (error) {
+    console.error(error);
+    setStatus('no se pudo importar el asset');
+  } finally {
+    importAssetInput.value = '';
+  }
 });
 
 resetViewBtn.addEventListener('click', () => {
