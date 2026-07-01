@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" role="img" aria-label="Árbol redondo Flow">
+  <defs>
+    <linearGradient id="leaf" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fa678"/>
+      <stop offset="1" stop-color="#60784f"/>
+    </linearGradient>
+    <linearGradient id="trunk" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9b7656"/>
+      <stop offset="1" stop-color="#6d513d"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="60" cy="126" rx="31" ry="8" fill="#302b25" opacity="0.16"/>
+  <path d="M52 78 C50 94 48 110 44 126 L76 126 C70 109 69 94 68 78 Z" fill="url(#trunk)"/>
+  <path d="M45 89 C54 94 66 95 77 89" fill="none" stroke="#5f4736" stroke-width="3" stroke-linecap="round" opacity="0.35"/>
+  <path d="M31 39 C34 20 50 12 65 18 C76 3 100 14 96 36 C113 43 111 69 94 75 C88 94 59 99 49 83 C30 91 10 75 20 55 C9 43 18 24 31 39 Z" fill="url(#leaf)"/>
+  <path d="M29 43 C45 51 61 50 77 39" fill="none" stroke="#b9c9a3" stroke-width="5" stroke-linecap="round" opacity="0.32"/>
+  <path d="M41 70 C52 78 69 80 84 67" fill="none" stroke="#4f6444" stroke-width="5" stroke-linecap="round" opacity="0.22"/>
+</svg>
