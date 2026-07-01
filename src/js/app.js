@@ -36,6 +36,16 @@ const categoryByTool = {
   water: 'water'
 };
 
+const markerColors = {
+  tree: '#5f7f4d',
+  house: '#b76f4f',
+  plant: '#8aa768',
+  rock: '#8d877d',
+  path: '#b99b6d',
+  water: '#70aeb8',
+  bridge: '#826648'
+};
+
 const projectState = {
   name: 'Sin título',
   activeTool: 'select',
@@ -46,22 +56,14 @@ const projectState = {
   assetCycle: {}
 };
 
-const camera = {
-  x: 0,
-  y: 0,
-  zoom: 1
-};
-
-const grid = {
-  width: 18,
-  height: 18,
-  tileWidth: 72,
-  tileHeight: 36
-};
+const camera = { x: 0, y: 0, zoom: 1 };
+const grid = { width: 18, height: 18, tileWidth: 72, tileHeight: 36 };
 
 const pointerState = {
   isDragging: false,
   didDrag: false,
+  startX: 0,
+  startY: 0,
   lastX: 0,
   lastY: 0,
   pointers: new Map(),
@@ -95,11 +97,7 @@ function selectObject(objectName) {
 async function loadAssetLibrary() {
   try {
     const response = await fetch('src/data/library.json');
-
-    if (!response.ok) {
-      throw new Error('No se pudo leer library.json');
-    }
-
+    if (!response.ok) throw new Error('No se pudo leer library.json');
     const library = await response.json();
     projectState.assets = library.assets ?? [];
     assetCountLabel.textContent = `${projectState.assets.length} assets`;
@@ -126,7 +124,6 @@ function getCanvasCenter() {
 function gridToScreen(col, row) {
   const center = getCanvasCenter();
   const mapOffsetY = 40;
-
   return {
     x: center.x + (col - row) * (grid.tileWidth / 2) * camera.zoom,
     y: center.y + (col + row) * (grid.tileHeight / 2) * camera.zoom - mapOffsetY * camera.zoom
@@ -138,14 +135,9 @@ function screenToGrid(screenX, screenY) {
   const mapOffsetY = 40;
   const localX = (screenX - center.x) / camera.zoom;
   const localY = (screenY - center.y + mapOffsetY * camera.zoom) / camera.zoom;
-
   const col = Math.floor(localY / grid.tileHeight + localX / grid.tileWidth);
   const row = Math.floor(localY / grid.tileHeight - localX / grid.tileWidth);
-
-  if (col < 0 || row < 0 || col >= grid.width || row >= grid.height) {
-    return null;
-  }
-
+  if (col < 0 || row < 0 || col >= grid.width || row >= grid.height) return null;
   return { col, row };
 }
 
@@ -174,9 +166,7 @@ function getObjectAtCell(cell) {
 function getNextAssetForTool(tool) {
   const category = categoryByTool[tool];
   const availableAssets = getAssetsByCategory(category);
-
   if (!availableAssets.length) return null;
-
   const currentIndex = projectState.assetCycle[category] ?? 0;
   const asset = availableAssets[currentIndex % availableAssets.length];
   projectState.assetCycle[category] = currentIndex + 1;
@@ -185,14 +175,12 @@ function getNextAssetForTool(tool) {
 
 function placeObject(cell) {
   const asset = getNextAssetForTool(projectState.activeTool);
-
   if (!asset) {
     setStatus('no hay assets disponibles para esta herramienta');
     return;
   }
 
   const existingObject = getObjectAtCell(cell);
-
   if (existingObject) {
     existingObject.assetId = asset.id;
     existingObject.name = asset.name;
@@ -201,7 +189,7 @@ function placeObject(cell) {
     selectObject(`${asset.name} en ${cell.col}, ${cell.row}`);
     setStatus(`objeto actualizado: ${asset.name}`);
   } else {
-    const newObject = {
+    projectState.placedObjects.push({
       id: crypto.randomUUID ? crypto.randomUUID() : `object_${Date.now()}`,
       assetId: asset.id,
       name: asset.name,
@@ -211,33 +199,43 @@ function placeObject(cell) {
       row: cell.row,
       rotation: 0,
       scale: 1
-    };
-
-    projectState.placedObjects.push(newObject);
+    });
     selectObject(`${asset.name} en ${cell.col}, ${cell.row}`);
     setStatus(`objeto colocado: ${asset.name}`);
   }
 }
 
+function drawMarkerShape(object) {
+  const color = markerColors[object.category] ?? '#6d8060';
+  const radius = Math.max(12, 15 * camera.zoom);
+
+  ctx.beginPath();
+  ctx.ellipse(0, 14 * camera.zoom, radius * 1.1, radius * 0.38, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(48, 43, 37, 0.2)';
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.arc(0, -4 * camera.zoom, radius, 0, Math.PI * 2);
+  ctx.fillStyle = '#fffaf1';
+  ctx.fill();
+  ctx.lineWidth = Math.max(2, 2 * camera.zoom);
+  ctx.strokeStyle = color;
+  ctx.stroke();
+
+  ctx.fillStyle = color;
+  ctx.font = `${Math.max(14, 17 * camera.zoom)}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(object.icon ?? '●', 0, -4 * camera.zoom);
+}
+
 function drawPlacedObjects() {
   const sortedObjects = [...projectState.placedObjects].sort((a, b) => (a.col + a.row) - (b.col + b.row));
-
   sortedObjects.forEach((object) => {
     const point = gridToScreen(object.col, object.row);
-    const size = Math.max(22, 28 * camera.zoom);
-
     ctx.save();
-    ctx.translate(point.x, point.y - 14 * camera.zoom);
-
-    ctx.beginPath();
-    ctx.ellipse(0, 14 * camera.zoom, 16 * camera.zoom, 6 * camera.zoom, 0, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(48, 43, 37, 0.18)';
-    ctx.fill();
-
-    ctx.font = `${size}px system-ui, Apple Color Emoji, Segoe UI Emoji`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(object.icon ?? '●', 0, 0);
+    ctx.translate(point.x, point.y - 17 * camera.zoom);
+    drawMarkerShape(object);
     ctx.restore();
   });
 }
@@ -249,7 +247,6 @@ function drawGrid() {
 
   const canvasWidth = isoCanvas.width / window.devicePixelRatio;
   const canvasHeight = isoCanvas.height / window.devicePixelRatio;
-
   const skyGradient = ctx.createLinearGradient(0, 0, 0, canvasHeight);
   skyGradient.addColorStop(0, '#dce8e2');
   skyGradient.addColorStop(0.48, '#dce8e2');
@@ -262,7 +259,6 @@ function drawGrid() {
       const point = gridToScreen(col, row);
       const isSelected = projectState.selectedCell?.col === col && projectState.selectedCell?.row === row;
       const tint = (col + row) % 2 === 0 ? '#a8b589' : '#aebc91';
-
       drawDiamond(
         point.x,
         point.y,
@@ -281,21 +277,16 @@ function drawGrid() {
 function resizeCanvas() {
   const rect = worldCanvas.getBoundingClientRect();
   const pixelRatio = window.devicePixelRatio || 1;
-
   isoCanvas.width = Math.floor(rect.width * pixelRatio);
   isoCanvas.height = Math.floor(rect.height * pixelRatio);
   isoCanvas.style.width = `${rect.width}px`;
   isoCanvas.style.height = `${rect.height}px`;
-
   drawGrid();
 }
 
 function getPointerPosition(event) {
   const rect = isoCanvas.getBoundingClientRect();
-  return {
-    x: event.clientX - rect.left,
-    y: event.clientY - rect.top
-  };
+  return { x: event.clientX - rect.left, y: event.clientY - rect.top };
 }
 
 function getDistance(pointA, pointB) {
@@ -303,9 +294,7 @@ function getDistance(pointA, pointB) {
 }
 
 toolButtons.forEach((button) => {
-  button.addEventListener('click', () => {
-    setActiveTool(button.dataset.tool);
-  });
+  button.addEventListener('click', () => setActiveTool(button.dataset.tool));
 });
 
 newProjectBtn.addEventListener('click', () => {
@@ -330,7 +319,6 @@ saveProjectBtn.addEventListener('click', () => {
     camera,
     savedAt: new Date().toISOString()
   };
-
   localStorage.setItem('storyworlds.project', JSON.stringify(savedProject));
   projectMessage.textContent = 'Proyecto: guardado local';
   setStatus('proyecto guardado en este navegador');
@@ -338,12 +326,10 @@ saveProjectBtn.addEventListener('click', () => {
 
 openProjectBtn.addEventListener('click', () => {
   const savedProject = localStorage.getItem('storyworlds.project');
-
   if (!savedProject) {
     setStatus('no hay proyecto guardado todavía');
     return;
   }
-
   const parsedProject = JSON.parse(savedProject);
   projectState.name = parsedProject.name ?? 'Proyecto abierto';
   projectState.selectedCell = parsedProject.selectedCell ?? null;
@@ -377,6 +363,8 @@ worldCanvas.addEventListener('pointerdown', (event) => {
   pointerState.pointers.set(event.pointerId, getPointerPosition(event));
   pointerState.isDragging = true;
   pointerState.didDrag = false;
+  pointerState.startX = event.clientX;
+  pointerState.startY = event.clientY;
   pointerState.lastX = event.clientX;
   pointerState.lastY = event.clientY;
 
@@ -389,50 +377,47 @@ worldCanvas.addEventListener('pointerdown', (event) => {
 
 worldCanvas.addEventListener('pointermove', (event) => {
   if (!pointerState.isDragging) return;
-
   pointerState.pointers.set(event.pointerId, getPointerPosition(event));
 
   if (pointerState.pointers.size === 2) {
     const points = [...pointerState.pointers.values()];
     const distance = getDistance(points[0], points[1]);
-
     if (pointerState.pinchDistance) {
       camera.zoom = clampZoom(pointerState.pinchZoom * (distance / pointerState.pinchDistance));
       pointerState.didDrag = true;
       drawGrid();
     }
-
     return;
   }
 
   const movementX = event.clientX - pointerState.lastX;
   const movementY = event.clientY - pointerState.lastY;
+  const totalMove = Math.hypot(event.clientX - pointerState.startX, event.clientY - pointerState.startY);
 
-  if (Math.abs(movementX) > 2 || Math.abs(movementY) > 2) {
-    pointerState.didDrag = true;
+  if (totalMove > 14) pointerState.didDrag = true;
+  if (pointerState.didDrag) {
+    camera.x += movementX;
+    camera.y += movementY;
+    drawGrid();
   }
 
-  camera.x += movementX;
-  camera.y += movementY;
   pointerState.lastX = event.clientX;
   pointerState.lastY = event.clientY;
-  drawGrid();
 });
 
 worldCanvas.addEventListener('pointerup', (event) => {
   pointerState.pointers.delete(event.pointerId);
+  if (pointerState.pointers.size < 2) pointerState.pinchDistance = null;
 
-  if (pointerState.pointers.size < 2) {
-    pointerState.pinchDistance = null;
-  }
+  const totalMove = Math.hypot(event.clientX - pointerState.startX, event.clientY - pointerState.startY);
+  const isTap = totalMove <= 14 && !pointerState.didDrag;
 
-  if (!pointerState.didDrag) {
+  if (isTap) {
     const position = getPointerPosition(event);
     const cell = screenToGrid(position.x, position.y);
 
     if (cell) {
       projectState.selectedCell = cell;
-
       if (projectState.activeTool === 'select') {
         const existingObject = getObjectAtCell(cell);
         selectObject(existingObject ? existingObject.name : `Celda ${cell.col}, ${cell.row}`);
@@ -445,13 +430,10 @@ worldCanvas.addEventListener('pointerup', (event) => {
       selectObject(null);
       setStatus('clic fuera del mapa');
     }
-
     drawGrid();
   }
 
-  if (pointerState.pointers.size === 0) {
-    pointerState.isDragging = false;
-  }
+  if (pointerState.pointers.size === 0) pointerState.isDragging = false;
 });
 
 worldCanvas.addEventListener('pointercancel', (event) => {
