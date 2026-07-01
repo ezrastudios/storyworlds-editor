@@ -63,8 +63,8 @@
     <section class="workspace" aria-label="Área de trabajo">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Milestone 1</p>
-          <h2>Editor Shell</h2>
+          <p class="eyebrow">Milestone 2</p>
+          <h2>Canvas isométrico</h2>
         </div>
         <div class="top-actions">
           <button id="resetViewBtn" type="button">Centrar vista</button>
@@ -73,10 +73,12 @@
       </header>
 
       <section class="canvas-panel" aria-label="Lienzo principal del editor">
-        <div id="worldCanvas" class="world-canvas" aria-label="Vista 3D"></div>
+        <div id="worldCanvas" class="world-canvas" aria-label="Vista isométrica">
+          <canvas id="isoCanvas"></canvas>
+        </div>
         <div class="canvas-note">
-          <strong>Escenario inicial</strong>
-          <span>Primero construiremos la herramienta. Después vendrán assets, terreno y escenas.</span>
+          <strong>Lienzo isométrico</strong>
+          <span>Arrastra para mover la cámara. Pellizca o usa rueda para hacer zoom. Toca una celda para seleccionarla.</span>
         </div>
       </section>
 
