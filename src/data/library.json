@@ -1,1 +1,127 @@
-
+{
+  "version": "0.1.0",
+  "name": "Story Worlds Starter Library",
+  "description": "Biblioteca inicial de assets conceptuales para validar el editor.",
+  "assets": [
+    {
+      "id": "tree_round_01",
+      "category": "tree",
+      "name": "Árbol redondo 01",
+      "icon": "🌳",
+      "kind": "placeholder",
+      "tags": ["forest", "plain", "soft"]
+    },
+    {
+      "id": "tree_round_02",
+      "category": "tree",
+      "name": "Árbol redondo 02",
+      "icon": "🌳",
+      "kind": "placeholder",
+      "tags": ["forest", "plain", "large"]
+    },
+    {
+      "id": "tree_tall_01",
+      "category": "tree",
+      "name": "Árbol alto 01",
+      "icon": "🌲",
+      "kind": "placeholder",
+      "tags": ["forest", "mountain", "tall"]
+    },
+    {
+      "id": "tree_palm_01",
+      "category": "tree",
+      "name": "Palmera 01",
+      "icon": "🌴",
+      "kind": "placeholder",
+      "tags": ["coast", "beach", "warm"]
+    },
+    {
+      "id": "plant_grass_01",
+      "category": "plant",
+      "name": "Hierba baja 01",
+      "icon": "🌿",
+      "kind": "placeholder",
+      "tags": ["ground", "grassland", "low"]
+    },
+    {
+      "id": "plant_flower_01",
+      "category": "plant",
+      "name": "Flores pequeñas 01",
+      "icon": "🌼",
+      "kind": "placeholder",
+      "tags": ["flower", "meadow", "color"]
+    },
+    {
+      "id": "plant_bush_01",
+      "category": "plant",
+      "name": "Arbusto 01",
+      "icon": "🌿",
+      "kind": "placeholder",
+      "tags": ["bush", "forest", "medium"]
+    },
+    {
+      "id": "rock_small_01",
+      "category": "rock",
+      "name": "Roca pequeña 01",
+      "icon": "🪨",
+      "kind": "placeholder",
+      "tags": ["rock", "detail", "small"]
+    },
+    {
+      "id": "rock_large_01",
+      "category": "rock",
+      "name": "Roca grande 01",
+      "icon": "🪨",
+      "kind": "placeholder",
+      "tags": ["rock", "landmark", "large"]
+    },
+    {
+      "id": "house_cottage_01",
+      "category": "house",
+      "name": "Casa sencilla 01",
+      "icon": "🏠",
+      "kind": "placeholder",
+      "tags": ["house", "cottage", "small"]
+    },
+    {
+      "id": "house_tower_01",
+      "category": "house",
+      "name": "Casa torre 01",
+      "icon": "🏘️",
+      "kind": "placeholder",
+      "tags": ["house", "tower", "vertical"]
+    },
+    {
+      "id": "path_dirt_01",
+      "category": "path",
+      "name": "Sendero tierra 01",
+      "icon": "〰️",
+      "kind": "placeholder",
+      "tags": ["path", "dirt", "organic"]
+    },
+    {
+      "id": "path_stone_01",
+      "category": "path",
+      "name": "Camino de piedra 01",
+      "icon": "🪨",
+      "kind": "placeholder",
+      "tags": ["path", "stone", "village"]
+    },
+    {
+      "id": "bridge_wood_01",
+      "category": "bridge",
+      "name": "Puente de madera 01",
+      "icon": "🌉",
+      "kind": "placeholder",
+      "tags": ["bridge", "wood", "water"]
+    },
+    {
+      "id": "water_lake_01",
+      "category": "water",
+      "name": "Agua tranquila 01",
+      "icon": "🌊",
+      "kind": "placeholder",
+      "tags": ["water", "lake", "calm"]
+    }
+  ]
+}
