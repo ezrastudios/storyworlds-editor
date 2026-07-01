@@ -208,24 +208,14 @@ button.primary,
 .world-canvas {
   position: absolute;
   inset: 0;
+  touch-action: none;
+  user-select: none;
 }
 
-.world-canvas::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 58%;
-  width: min(68vw, 680px);
-  aspect-ratio: 1.45;
-  transform: translate(-50%, -50%) rotateX(58deg) rotateZ(-34deg);
-  border-radius: 42px;
-  background:
-    radial-gradient(ellipse at 62% 28%, #8cbaba 0 14%, transparent 15%),
-    linear-gradient(35deg, transparent 38%, #b99b6d 39% 44%, transparent 45%),
-    radial-gradient(circle at 28% 28%, #61784f 0 10%, transparent 11%),
-    radial-gradient(circle at 42% 63%, #728a5e 0 8%, transparent 9%),
-    var(--terrain);
-  box-shadow: 0 30px 60px rgba(75, 63, 45, 0.22);
+.world-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .canvas-note {
@@ -234,12 +224,13 @@ button.primary,
   bottom: 1rem;
   display: grid;
   gap: 0.2rem;
-  max-width: min(360px, calc(100% - 2rem));
+  max-width: min(430px, calc(100% - 2rem));
   padding: 0.85rem 1rem;
   border-radius: 18px;
   background: rgba(255, 250, 241, 0.86);
   box-shadow: 0 14px 40px rgba(70, 55, 38, 0.16);
   backdrop-filter: blur(14px);
+  pointer-events: none;
 }
 
 .canvas-note strong {
