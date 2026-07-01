@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Story Worlds Editor</title>
+  <link rel="stylesheet" href="src/styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">SW</span>
+        <div>
+          <h1>Story Worlds</h1>
+          <p>Editor de continuidad narrativa</p>
+        </div>
+      </div>
+
+      <nav class="tool-list" aria-label="Secciones principales">
+        <button class="tool active">Proyecto</button>
+        <button class="tool">Terreno</button>
+        <button class="tool">Agua</button>
+        <button class="tool">Biomas</button>
+        <button class="tool">Lugares</button>
+        <button class="tool">Escenas</button>
+        <button class="tool">Cámaras</button>
+        <button class="tool">Exportar</button>
+      </nav>
+    </aside>
+
+    <section class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Nuevo proyecto</p>
+          <h2>World Bible Prototype</h2>
+        </div>
+        <div class="actions">
+          <button>Guardar</button>
+          <button class="primary">Nueva escena</button>
+        </div>
+      </header>
+
+      <section class="canvas-placeholder" aria-label="Vista principal del editor">
+        <div class="horizon"></div>
+        <div class="terrain-card">
+          <span class="lake"></span>
+          <span class="forest forest-a"></span>
+          <span class="forest forest-b"></span>
+          <span class="path"></span>
+          <span class="place place-a">Casa</span>
+          <span class="place place-b">Lago</span>
+        </div>
+      </section>
+
+      <footer class="statusbar">
+        <span>Estado: diseño inicial</span>
+        <span>Herramienta: Proyecto</span>
+        <span>Autosave: pendiente</span>
+      </footer>
+    </section>
+  </main>
+</body>
+</html>
