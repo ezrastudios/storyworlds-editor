@@ -3,60 +3,91 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Story Worlds Editor: herramienta visual para crear escenarios consistentes para historias e ilustraciones." />
   <title>Story Worlds Editor</title>
-  <link rel="stylesheet" href="src/styles.css" />
+  <link rel="stylesheet" href="src/css/style.css" />
 </head>
 <body>
-  <main class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
+  <main class="app-shell" data-active-tool="select">
+    <aside class="sidebar" aria-label="Panel principal">
+      <section class="brand" aria-label="Identidad del proyecto">
         <span class="brand-mark">SW</span>
         <div>
+          <p class="eyebrow">Ezra Studios</p>
           <h1>Story Worlds</h1>
-          <p>Editor de continuidad narrativa</p>
-        </div>
-      </div>
-
-      <nav class="tool-list" aria-label="Secciones principales">
-        <button class="tool active">Proyecto</button>
-        <button class="tool">Terreno</button>
-        <button class="tool">Agua</button>
-        <button class="tool">Biomas</button>
-        <button class="tool">Lugares</button>
-        <button class="tool">Escenas</button>
-        <button class="tool">Cámaras</button>
-        <button class="tool">Exportar</button>
-      </nav>
-    </aside>
-
-    <section class="workspace">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">Milestone 1</p>
-          <h2>Core Canvas</h2>
-        </div>
-        <div class="actions">
-          <button>Guardar</button>
-          <button class="primary">Nueva escena</button>
-        </div>
-      </header>
-
-      <section class="canvas-panel" aria-label="Vista 3D del editor">
-        <div id="worldCanvas" class="world-canvas"></div>
-        <div class="canvas-note">
-          <strong>Core Canvas</strong>
-          <span>Escena, cámara, luz, terreno y marcador inicial.</span>
+          <p class="subtitle">Editor de continuidad narrativa</p>
         </div>
       </section>
 
-      <footer class="statusbar">
-        <span>Estado: escena 3D inicial</span>
-        <span>Herramienta: Proyecto</span>
-        <span>Autosave: pendiente</span>
+      <section class="panel-block">
+        <h2>Proyecto</h2>
+        <div class="button-grid">
+          <button id="newProjectBtn" type="button">Nuevo</button>
+          <button id="saveProjectBtn" type="button">Guardar</button>
+          <button id="openProjectBtn" type="button">Abrir</button>
+        </div>
+      </section>
+
+      <section class="panel-block">
+        <h2>Herramientas</h2>
+        <nav class="tool-list" aria-label="Herramientas del editor">
+          <button class="tool active" type="button" data-tool="select">Seleccionar</button>
+          <button class="tool" type="button" data-tool="tree">Árbol</button>
+          <button class="tool" type="button" data-tool="house">Casa</button>
+          <button class="tool" type="button" data-tool="plant">Vegetación</button>
+          <button class="tool" type="button" data-tool="rock">Roca</button>
+          <button class="tool" type="button" data-tool="path">Camino</button>
+          <button class="tool" type="button" data-tool="water">Agua</button>
+        </nav>
+      </section>
+
+      <section class="panel-block inspector-panel" aria-label="Inspector">
+        <h2>Inspector</h2>
+        <dl>
+          <div>
+            <dt>Herramienta</dt>
+            <dd id="activeToolLabel">Seleccionar</dd>
+          </div>
+          <div>
+            <dt>Objeto</dt>
+            <dd id="selectedObjectLabel">Ninguno</dd>
+          </div>
+          <div>
+            <dt>Biblioteca</dt>
+            <dd id="assetCountLabel">Sin cargar</dd>
+          </div>
+        </dl>
+      </section>
+    </aside>
+
+    <section class="workspace" aria-label="Área de trabajo">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Milestone 1</p>
+          <h2>Editor Shell</h2>
+        </div>
+        <div class="top-actions">
+          <button id="resetViewBtn" type="button">Centrar vista</button>
+          <button id="createSceneBtn" class="primary" type="button">Nueva escena</button>
+        </div>
+      </header>
+
+      <section class="canvas-panel" aria-label="Lienzo principal del editor">
+        <div id="worldCanvas" class="world-canvas" aria-label="Vista 3D"></div>
+        <div class="canvas-note">
+          <strong>Escenario inicial</strong>
+          <span>Primero construiremos la herramienta. Después vendrán assets, terreno y escenas.</span>
+        </div>
+      </section>
+
+      <footer class="statusbar" aria-label="Estado del editor">
+        <span id="statusMessage">Estado: listo para iniciar.</span>
+        <span id="toolMessage">Herramienta: Seleccionar</span>
+        <span id="projectMessage">Proyecto: sin guardar</span>
       </footer>
     </section>
   </main>
 
-  <script type="module" src="src/main.js"></script>
+  <script type="module" src="src/js/app.js"></script>
 </body>
 </html>
