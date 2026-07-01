@@ -31,6 +31,26 @@
         <input id="importProjectInput" class="visually-hidden" type="file" accept=".swe,application/json" />
       </section>
 
+      <section class="panel-block asset-importer" aria-label="Importador de assets">
+        <h2>Biblioteca local</h2>
+        <div class="asset-form">
+          <input id="assetNameInput" type="text" placeholder="asset_id, ej. house_small_01" autocomplete="off" />
+          <select id="assetCategoryInput" aria-label="Categoría del asset">
+            <option value="house">Casa</option>
+            <option value="tree">Árbol</option>
+            <option value="plant">Vegetación</option>
+            <option value="rock">Roca</option>
+            <option value="path">Camino</option>
+            <option value="water">Agua</option>
+            <option value="bridge">Puente</option>
+          </select>
+          <button id="importAssetBtn" type="button">Importar asset</button>
+          <input id="importAssetInput" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" />
+        </div>
+        <div id="assetPreview" class="asset-preview" aria-live="polite">Sin asset seleccionado</div>
+        <div id="assetLibraryList" class="asset-library-list" aria-label="Assets importados"></div>
+      </section>
+
       <section class="panel-block">
         <h2>Herramientas</h2>
         <nav class="tool-list" aria-label="Herramientas del editor">
@@ -67,8 +87,8 @@
     <section class="workspace" aria-label="Área de trabajo">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Milestone 2</p>
-          <h2>Canvas isométrico</h2>
+          <p class="eyebrow">Milestone 3</p>
+          <h2>Biblioteca de assets</h2>
         </div>
         <div class="top-actions">
           <button id="resetViewBtn" type="button">Centrar vista</button>
@@ -82,7 +102,7 @@
         </div>
         <div class="canvas-note">
           <strong>Lienzo isométrico</strong>
-          <span>Arrastra para mover la cámara. Pellizca o usa rueda para hacer zoom. Toca una celda para seleccionar, colocar o borrar.</span>
+          <span>Importa un asset local, selecciónalo en la biblioteca y toca una celda para colocarlo.</span>
         </div>
       </section>
 
