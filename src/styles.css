@@ -1,0 +1,245 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f3efe6;
+  color: #302b25;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f7f3ea, #e8dfcf);
+}
+
+button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.75rem 1rem;
+  background: #efe6d7;
+  color: #3a332b;
+  font: inherit;
+  cursor: pointer;
+}
+
+button.primary,
+.tool.active {
+  background: #6d8060;
+  color: #fffaf1;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) 1fr;
+}
+
+.sidebar {
+  padding: 1.25rem;
+  background: rgba(255, 250, 241, 0.75);
+  border-right: 1px solid rgba(95, 77, 55, 0.12);
+  backdrop-filter: blur(16px);
+}
+
+.brand {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: #302b25;
+  color: #fffaf1;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.brand h1,
+.brand p,
+.topbar h2,
+.topbar p {
+  margin: 0;
+}
+
+.brand h1 {
+  font-size: 1.1rem;
+}
+
+.brand p,
+.eyebrow,
+.statusbar {
+  color: #756a5c;
+  font-size: 0.85rem;
+}
+
+.tool-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.tool {
+  width: 100%;
+  text-align: left;
+  border-radius: 14px;
+}
+
+.workspace {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.topbar h2 {
+  font-size: clamp(1.3rem, 2vw, 2rem);
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.canvas-placeholder {
+  position: relative;
+  margin: 0 1.25rem 1.25rem;
+  border-radius: 28px;
+  overflow: hidden;
+  background: linear-gradient(#dce8e2 0 45%, #c6d1ad 45% 100%);
+  box-shadow: 0 24px 80px rgba(70, 55, 38, 0.18);
+}
+
+.horizon {
+  position: absolute;
+  inset: 42% 0 auto;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.terrain-card {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: min(70vw, 680px);
+  aspect-ratio: 1.45;
+  transform: translate(-50%, -50%) rotateX(56deg) rotateZ(-34deg);
+  border-radius: 42px;
+  background: #a8b589;
+  box-shadow: 0 30px 60px rgba(75, 63, 45, 0.22);
+}
+
+.lake,
+.forest,
+.path,
+.place {
+  position: absolute;
+  display: block;
+}
+
+.lake {
+  width: 28%;
+  height: 25%;
+  left: 54%;
+  top: 22%;
+  border-radius: 58% 42% 52% 48%;
+  background: #8cbaba;
+}
+
+.forest {
+  width: 24%;
+  height: 22%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 35%, #8aa06f, #61784f 65%);
+}
+
+.forest-a {
+  left: 18%;
+  top: 20%;
+}
+
+.forest-b {
+  left: 36%;
+  top: 58%;
+  transform: scale(0.8);
+}
+
+.path {
+  left: 25%;
+  top: 47%;
+  width: 46%;
+  height: 8%;
+  border-radius: 999px;
+  background: #b99b6d;
+  transform: rotate(-12deg);
+}
+
+.place {
+  padding: 0.4rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(255, 250, 241, 0.9);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #514638;
+  transform: rotateZ(34deg) rotateX(-56deg);
+}
+
+.place-a {
+  left: 22%;
+  top: 42%;
+}
+
+.place-b {
+  left: 59%;
+  top: 22%;
+}
+
+.statusbar {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0 1.25rem 1.25rem;
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid rgba(95, 77, 55, 0.12);
+  }
+
+  .tool-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .tool {
+    text-align: center;
+    padding-inline: 0.6rem;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .canvas-placeholder {
+    min-height: 56vh;
+  }
+}
