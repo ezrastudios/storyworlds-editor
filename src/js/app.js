@@ -11,6 +11,9 @@ const projectMessage = document.querySelector('#projectMessage');
 const newProjectBtn = document.querySelector('#newProjectBtn');
 const saveProjectBtn = document.querySelector('#saveProjectBtn');
 const openProjectBtn = document.querySelector('#openProjectBtn');
+const exportProjectBtn = document.querySelector('#exportProjectBtn');
+const importProjectBtn = document.querySelector('#importProjectBtn');
+const importProjectInput = document.querySelector('#importProjectInput');
 const resetViewBtn = document.querySelector('#resetViewBtn');
 const createSceneBtn = document.querySelector('#createSceneBtn');
 const worldCanvas = document.querySelector('#worldCanvas');
@@ -230,13 +233,11 @@ function placeObject(cell) {
 
 function eraseObject(cell) {
   const objectIndex = projectState.placedObjects.findIndex((object) => object.col === cell.col && object.row === cell.row);
-
   if (objectIndex === -1) {
     selectObject(`Celda ${cell.col}, ${cell.row}`);
     setStatus('no hay objeto para borrar');
     return;
   }
-
   const [removedObject] = projectState.placedObjects.splice(objectIndex, 1);
   selectObject(null);
   setStatus(`objeto borrado: ${removedObject.name}`);
@@ -335,6 +336,95 @@ function getDistance(pointA, pointB) {
   return Math.hypot(pointA.x - pointB.x, pointA.y - pointB.y);
 }
 
+function createProjectDocument() {
+  const timestamp = new Date().toISOString();
+  return {
+    format: 'SWE',
+    version: 1,
+    project: {
+      name: projectState.name,
+      updatedAt: timestamp
+    },
+    editor: {
+      activeTool: projectState.activeTool,
+      selectedCell: projectState.selectedCell,
+      selectedObject: projectState.selectedObject
+    },
+    grid: {
+      type: 'isometric',
+      width: grid.width,
+      height: grid.height,
+      tileWidth: grid.tileWidth,
+      tileHeight: grid.tileHeight
+    },
+    camera: { ...camera },
+    assetCycle: { ...projectState.assetCycle },
+    objects: projectState.placedObjects.map((object) => ({ ...object }))
+  };
+}
+
+function applyProjectDocument(documentData) {
+  if (documentData?.format !== 'SWE' || documentData?.version !== 1) {
+    throw new Error('Archivo SWE no válido o versión no compatible.');
+  }
+
+  projectState.name = documentData.project?.name ?? 'Proyecto importado';
+  projectState.selectedCell = documentData.editor?.selectedCell ?? null;
+  projectState.previewCell = null;
+  projectState.placedObjects = documentData.objects ?? [];
+  projectState.assetCycle = documentData.assetCycle ?? {};
+
+  camera.x = documentData.camera?.x ?? 0;
+  camera.y = documentData.camera?.y ?? 0;
+  camera.zoom = documentData.camera?.zoom ?? 1;
+
+  selectObject(documentData.editor?.selectedObject ?? null);
+  setActiveTool(documentData.editor?.activeTool ?? 'select');
+  projectMessage.textContent = `Proyecto: ${projectState.name}`;
+  drawGrid();
+}
+
+function getSafeFileName(name) {
+  return (name || 'story-world')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9áéíóúñü]+/gi, '-')
+    .replace(/^-+|-+$/g, '') || 'story-world';
+}
+
+function exportProjectFile() {
+  const projectDocument = createProjectDocument();
+  const fileContent = JSON.stringify(projectDocument, null, 2);
+  const blob = new Blob([fileContent], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.href = url;
+  link.download = `${getSafeFileName(projectState.name)}.swe`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  setStatus('archivo .swe exportado');
+}
+
+function importProjectFile(file) {
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const documentData = JSON.parse(reader.result);
+      applyProjectDocument(documentData);
+      setStatus(`archivo importado: ${file.name}`);
+    } catch (error) {
+      console.error(error);
+      setStatus('no se pudo importar el archivo');
+    }
+  };
+  reader.readAsText(file);
+}
+
 toolButtons.forEach((button) => {
   button.addEventListener('click', () => setActiveTool(button.dataset.tool));
 });
@@ -352,17 +442,7 @@ newProjectBtn.addEventListener('click', () => {
 });
 
 saveProjectBtn.addEventListener('click', () => {
-  const savedProject = {
-    name: projectState.name,
-    activeTool: projectState.activeTool,
-    selectedObject: projectState.selectedObject,
-    selectedCell: projectState.selectedCell,
-    placedObjects: projectState.placedObjects,
-    assetCycle: projectState.assetCycle,
-    camera,
-    savedAt: new Date().toISOString()
-  };
-  localStorage.setItem('storyworlds.project', JSON.stringify(savedProject));
+  localStorage.setItem('storyworlds.project', JSON.stringify(createProjectDocument()));
   projectMessage.textContent = 'Proyecto: guardado local';
   setStatus('proyecto guardado en este navegador');
 });
@@ -373,20 +453,25 @@ openProjectBtn.addEventListener('click', () => {
     setStatus('no hay proyecto guardado todavía');
     return;
   }
-  const parsedProject = JSON.parse(savedProject);
-  projectState.name = parsedProject.name ?? 'Proyecto abierto';
-  projectState.selectedCell = parsedProject.selectedCell ?? null;
-  projectState.previewCell = null;
-  projectState.placedObjects = parsedProject.placedObjects ?? [];
-  projectState.assetCycle = parsedProject.assetCycle ?? {};
-  camera.x = parsedProject.camera?.x ?? 0;
-  camera.y = parsedProject.camera?.y ?? 0;
-  camera.zoom = parsedProject.camera?.zoom ?? 1;
-  selectObject(parsedProject.selectedObject ?? null);
-  setActiveTool(parsedProject.activeTool ?? 'select');
-  projectMessage.textContent = `Proyecto: ${projectState.name}`;
-  setStatus('proyecto abierto desde este navegador');
-  drawGrid();
+
+  try {
+    applyProjectDocument(JSON.parse(savedProject));
+    setStatus('proyecto abierto desde este navegador');
+  } catch (error) {
+    console.error(error);
+    setStatus('no se pudo abrir el proyecto guardado');
+  }
+});
+
+exportProjectBtn.addEventListener('click', exportProjectFile);
+
+importProjectBtn.addEventListener('click', () => {
+  importProjectInput.click();
+});
+
+importProjectInput.addEventListener('change', () => {
+  importProjectFile(importProjectInput.files?.[0]);
+  importProjectInput.value = '';
 });
 
 resetViewBtn.addEventListener('click', () => {
